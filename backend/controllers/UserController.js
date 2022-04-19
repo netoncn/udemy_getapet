@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken')
 const status = require('../helpers/http-status')
 const createUserToken = require('../helpers/create-user-token')
 const getToken = require('../helpers/get-token')
+const getUserByToken = require('../helpers/get-user-by-token')
 
 module.exports = class UserController {
     static register = async (req, res) => {
@@ -120,12 +121,19 @@ module.exports = class UserController {
 
         const { name, email, phone, password, confirmpassword } = req.body
         let image = ''
-        const id = req.params.id
 
-        const user = await User.findById(id).catch(() => {
-            res.status(status.unprocessable_entity).json({ message: 'Usuário não encontrado' })
-            return
-        })
+        if(req.file) {
+            user.image = req.file.filename
+        }
+        
+        const token = getToken(req)
+        const user = getUserByToken(token)
+
+        user.name = name || user.name
+        user.email = email || user.email
+        user.phone = phone || user.phone
+        user.password = password || user.password
+        user.save()
 
         res.status(status.ok).json({user})
         return
